@@ -6,6 +6,8 @@ __s32 is_exp = 0;
 __u32		rgb_only = 0;
 __u8		EDID_Buf[HDMI_EDID_LEN];
 __u8 		Device_Support_VIC[512];
+__u32		cec_phy_addr;
+EXPORT_SYMBOL(cec_phy_addr);
 
 static __u8 exp0[16] =
 {
@@ -246,6 +248,9 @@ static __s32 Parse_HDMI_VSDB(__u8 * pbuf,__u8 size)
 	} else {
 		return 0;
 	}
+
+	/* set cec phy addr */
+	cec_phy_addr = (((__u32)pbuf[3]) << 8) | pbuf[4];
 
 	if(size <=8)
 		return 0;
