@@ -32,6 +32,25 @@ static bool b_hdmi_suspend;
 static bool b_hdmi_suspend_pre;
 __s32 Hdmi_suspend(void);
 __s32 Hdmi_resume(void);
+static BLOCKING_NOTIFIER_HEAD(sunxi_hdmi_notifier_list);
+
+int register_sunxi_hdmi_notifier(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_register(&sunxi_hdmi_notifier_list, nb);
+}
+EXPORT_SYMBOL(register_sunxi_hdmi_notifier);
+
+int unregister_sunxi_hdmi_notifier(struct notifier_block *nb)
+{
+	return blocking_notifier_chain_unregister(&sunxi_hdmi_notifier_list, nb);
+}
+EXPORT_SYMBOL(unregister_sunxi_hdmi_notifier);
+
+int sunxi_hdmi_notifier_call_chain(unsigned long val)
+{
+     int ret = blocking_notifier_call_chain(&sunxi_hdmi_notifier_list, val, NULL);
+     return ret;
+}
 
 void hdmi_delay_ms(__u32 t)
 {

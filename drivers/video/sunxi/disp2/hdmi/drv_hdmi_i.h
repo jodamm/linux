@@ -64,6 +64,9 @@ __s32 Hdmi_get_hdcp_enable(void);
 __s32 Hdmi_get_video_timming_info(disp_video_timings **video_info);
 int Hdmi_get_video_info_index(u32 mode_id);
 __s32 Hdmi_get_input_csc(void);
+int register_sunxi_hdmi_notifier(struct notifier_block *nb);
+int unregister_sunxi_hdmi_notifier(struct notifier_block *nb);
+extern int sunxi_hdmi_notifier_call_chain(unsigned long val);
 
 extern __s32 hdmi_i2c_add_driver(void);
 extern __s32 hdmi_i2c_del_driver(void);
