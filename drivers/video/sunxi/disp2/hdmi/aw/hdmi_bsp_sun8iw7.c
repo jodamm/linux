@@ -1,6 +1,7 @@
 #include "hdmi_bsp_i.h"
 #include "hdmi_bsp.h"
 #include "hdmi_core.h"
+#include "dw_hdmi.h"
 
 static unsigned int hdmi_base_addr;
 static struct video_para glb_video;
@@ -266,7 +267,6 @@ void bsp_hdmi_inner_init(void)
 	hdmi_write(0x10013,0x54);
 	hdmi_write(0x8080, 0x00);
 	hdmi_udelay(1);
-	hdmi_write(0xF01F, 0x00);
 	hdmi_write(0x8403, 0xff);
 	hdmi_write(0x904C, 0xff);
 	hdmi_write(0x904E, 0xff);
@@ -275,9 +275,13 @@ void bsp_hdmi_inner_init(void)
 	hdmi_write(0x8A50, 0xff);
 	hdmi_write(0x8272, 0xff);
 	hdmi_write(0x40C0, 0xff);
+	hdmi_write(HDMI_PHY_MASK0, 0xff);
+	hdmi_write(HDMI_IH_MUTE_PHY_STAT0, 0xff);
+	hdmi_write(HDMI_IH_MUTE_I2CM_STAT0, 0xff);
 	hdmi_write(0x86F0, 0xff);
 	hdmi_write(0x0EE3, 0xff);
 	hdmi_write(0x8EE2, 0xff);
+	hdmi_write(HDMI_IH_MUTE, 0x00);
 	hdmi_write(0xA049, 0xf0);
 	hdmi_write(0xB045, 0x1e);
 	hdmi_write(0x00C1, 0x00);

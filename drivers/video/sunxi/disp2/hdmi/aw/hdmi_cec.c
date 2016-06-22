@@ -154,7 +154,7 @@ static int sunxi_hdmi_notify(struct notifier_block *nb,
     if (open_count) {
 	switch (code) {
 	    case 0x00: // Unplug
-		pr_err("HDMI link disconnected\n");
+		pr_info("[CEC]HDMI link disconnected\n");
 		event = vmalloc(sizeof(struct hdmi_cec_event));
 		if (NULL == event) {
 		    pr_err("%s: Not enough memory!\n", __func__);
@@ -168,7 +168,7 @@ static int sunxi_hdmi_notify(struct notifier_block *nb,
 		wake_up(&hdmi_cec_queue);
 		break;
 	    case 0x04: // Plug
-		pr_err("HDMI link connected\n");
+		pr_info("[CEC]HDMI link connected\n");
 		event = vmalloc(sizeof(struct hdmi_cec_event));
 		if (NULL == event) {
 		    pr_err("%s: Not enough memory\n", __func__);
@@ -182,7 +182,7 @@ static int sunxi_hdmi_notify(struct notifier_block *nb,
 		wake_up(&hdmi_cec_queue);
 		break;
 	    case 0x05: // reinit done
-		pr_err("HDMI reinitialized\n");
+		pr_info("[CEC]HDMI reinitialized\n");
 		val = hdmi_readb(HDMI_MC_CLKDIS);
 		val &= ~HDMI_MC_CLKDIS_CECCLK_DISABLE;
 		hdmi_writeb(val, HDMI_MC_CLKDIS);
@@ -207,38 +207,6 @@ static int sunxi_hdmi_notify(struct notifier_block *nb,
 static struct notifier_block sunxi_hdmi_nb = {
 	.notifier_call = sunxi_hdmi_notify,
 };
-
-static void initialize_hdmi_ih_mutes(void)
-{
-    u8 ih_mute;
-
-    /*
-     * Boot up defaults are:
-     * HDMI_IH_MUTE   = 0x03 (disabled)
-     * HDMI_IH_MUTE_* = 0x00 (enabled)
-     *
-     * Disable top level interrupt bits in HDMI block
-     */
-
-    ih_mute = hdmi_readb(HDMI_IH_MUTE) |
-	  HDMI_IH_MUTE_MUTE_WAKEUP_INTERRUPT |
-	  HDMI_IH_MUTE_MUTE_ALL_INTERRUPT;
-
-    hdmi_writeb(ih_mute, HDMI_IH_MUTE);
-
-    /* FIXME : should be done in HDMI init */
-    /* by default mask all interrupts */
-    hdmi_writeb(0xff, HDMI_PHY_MASK0);
-
-    /* Disable interrupts in the IH_MUTE_* registers */
-    hdmi_writeb(0xff, HDMI_IH_MUTE_PHY_STAT0);
-    hdmi_writeb(0xff, HDMI_IH_MUTE_I2CM_STAT0);
-
-    /* Enable top level interrupt bits in HDMI block */
-    ih_mute &= ~(HDMI_IH_MUTE_MUTE_WAKEUP_INTERRUPT |
-	    HDMI_IH_MUTE_MUTE_ALL_INTERRUPT);
-    hdmi_writeb(ih_mute, HDMI_IH_MUTE);
-}
 
 static int hdmi_cec_read_reg_bit(void)    /* 1bit */
 {
@@ -366,7 +334,7 @@ int rxack_thread(void *data)
 static irqreturn_t hdmi_cec_isr(int irq, void *data)
 {
     struct hdmi_cec_priv *hdmi_cec = data;
-    u16 cec_stat = 0;
+    u8 cec_stat;
     unsigned long flags;
 
     spin_lock_irqsave(&hdmi_cec->irq_lock, flags);
@@ -377,7 +345,7 @@ static irqreturn_t hdmi_cec_isr(int irq, void *data)
     hdmi_writeb(cec_stat, HDMI_IH_CEC_STAT0);
     if ((cec_stat & (HDMI_IH_CEC_STAT0_ERROR_INIT | \
 	HDMI_IH_CEC_STAT0_NACK | HDMI_IH_CEC_STAT0_EOM | \
-	HDMI_IH_CEC_STAT0_DONE | 0x180)) == 0) {
+	HDMI_IH_CEC_STAT0_DONE)) == 0) {
 	spin_unlock_irqrestore(&hdmi_cec->irq_lock, flags);
 	return IRQ_HANDLED;
     }
@@ -586,10 +554,10 @@ static ssize_t hdmi_cec_write(struct file *file, const char __user *buf,
 
     if (!open_count)
 	return -ENODEV;
-    /* wait for free line */
+    /* wait for free CEC line */
     ret = hdmi_wait_free_cecline();
     if (ret < 0) {
-	pr_err("[CEC] no free cec line detected.\n");
+	pr_err("[CEC]No free cec line detected.\n");
 	ret = -ERESTARTSYS;
 	goto tx_out;
     }
@@ -687,7 +655,7 @@ static long hdmi_cec_ioctl(struct file *filp, u_int cmd,
 	mutex_lock(&hdmi_cec_data.lock);
 	if (false == hdmi_cec_data.cec_state) {
 	    mutex_unlock(&hdmi_cec_data.lock);
-	    pr_err("Trying to set logical address while not started\n");
+	    pr_err("[CEC]Trying to set logical address while not started.\n");
 	    return -EACCES;
 	}
 	hdmi_cec_data.Logical_address = (u8)arg;
@@ -801,7 +769,6 @@ static int __init hdmi_cec_init(void)
 	goto out;
     }
 
-    initialize_hdmi_ih_mutes();
     spin_lock_init(&hdmi_cec_data.irq_lock);
     hdmi_cec_data.cec_irq = irqhdmi;
 

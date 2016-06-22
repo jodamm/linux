@@ -522,6 +522,5 @@ __s32 video_enter_lp(void)
 __s32 video_exit_lp(void)
 {
 	bsp_hdmi_init();
-	sunxi_hdmi_notifier_call_chain(0x05);
 	return 0;
 }
